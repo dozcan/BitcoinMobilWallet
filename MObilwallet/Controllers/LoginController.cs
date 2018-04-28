@@ -36,7 +36,7 @@ namespace MobilWallet.Controllers
             try
             {
                 string email = user.Email.ToString();
-                Safe safe = TransactionalMethods.DecryptWalletByAskingForPassword("C:\\Blockchain\\Wallet\\wallet" + user.Email.ToString() + ".json", user.Password.ToString());
+                Safe safe = TransactionalMethods.DecryptWalletByAskingForPassword("/home/Blockchain/Wallet/wallet" + user.Email.ToString() + ".json", user.Password.ToString());
                 string bitcoinAddress = safe.ExtKey.PrivateKey.PubKey.GetAddress(Network.TestNet).ToString();
 
                 List<string> balances = TransactionalMethods.ShowBalance(safe);

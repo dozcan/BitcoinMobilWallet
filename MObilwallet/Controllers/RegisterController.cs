@@ -35,7 +35,7 @@ namespace MobilWallet.Controllers
             try
             {
                 //bu dosyalar, mysql docker ile paketlenip iki ayrı sunucuda replice edilmeli
-                string walletpath = Path.Combine("C:\\Blockchain\\Wallet", "wallet" + user.Email.ToString() + ".json");
+                string walletpath = Path.Combine("/home/Blockchain/Wallet", "wallet" + user.Email.ToString() + ".json");
 
                 Mnemonic mnemonic;
                 Safe safe = Safe.Create(out mnemonic, user.Password, walletpath, Network.TestNet);

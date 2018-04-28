@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  mobilwallet:
+    image: mobilwallet
+    build:
+      context: .
+      dockerfile: MobilWallet\Dockerfile
