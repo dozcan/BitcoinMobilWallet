@@ -12804,11 +12804,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\doga\\source\\repos\\BitcoinWallet\\MobilWallet\\MobilWallet.csproj",
+      "projectUniqueName": "C:\\Blockchain\\BitcoinMobilWallet\\MobilWallet\\MobilWallet.csproj",
       "projectName": "MobilWallet",
-      "projectPath": "C:\\Users\\doga\\source\\repos\\BitcoinWallet\\MobilWallet\\MobilWallet.csproj",
+      "projectPath": "C:\\Blockchain\\BitcoinMobilWallet\\MobilWallet\\MobilWallet.csproj",
       "packagesPath": "C:\\Users\\doga\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\doga\\source\\repos\\BitcoinWallet\\MobilWallet\\obj\\",
+      "outputPath": "C:\\Blockchain\\BitcoinMobilWallet\\MobilWallet\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
