@@ -30,12 +30,12 @@ namespace MobilWallet.Controllers
     {
         // POST api/values
         [HttpPost]
-        public NewAddress Post([FromBody]User user)
+        public Response Post([FromBody]User user)
         {
             try
             {
                 //bu dosyalar, mysql docker ile paketlenip iki ayrı sunucuda replice edilmeli
-                string walletpath = Path.Combine(@"/home/Blockchain/Wallet", "wallet" + user.Email.ToString() + ".json");
+                string walletpath = Path.Combine("c:/Blockchain/Wallet", "wallet" + user.Email.ToString() + ".json");
 
                 Mnemonic mnemonic;
                 Safe safe = Safe.Create(out mnemonic, user.Password, walletpath, Network.TestNet);
@@ -45,12 +45,29 @@ namespace MobilWallet.Controllers
 
                 ExtKey privateKey = new ExtKey(Encoding.ASCII.GetBytes(mnemonicAddress));
 
-                return new NewAddress { BitcoinAddress = bitcoinAddress, MnemonicAddress = mnemonicAddress,Success=true };
-
+                Response _resp = new Response();
+                RegisterResponse _regresp = new RegisterResponse();
+                _resp.success = true;
+                _regresp.Created = DateTime.Now;
+                _regresp.Email = user.Email;
+                _regresp.BitcoinAddress = bitcoinAddress;
+                _regresp.Explanation = "Registration generated succesfully";
+                _regresp.MnemonicAddress = mnemonicAddress;
+                _resp.ResponseObect = _regresp;
+                return _resp;
             }
             catch (Exception ex)
             {
-                return new NewAddress { BitcoinAddress = "", MnemonicAddress = "" ,Success=false};
+                Response _resp = new Response();
+                RegisterResponse _regresp = new RegisterResponse();
+                _resp.success = false;
+                _regresp.Created = DateTime.Now;
+                _regresp.Email = user.Email;
+                _regresp.Explanation = ex.Message;
+                _regresp.BitcoinAddress = "";
+                _regresp.MnemonicAddress = "";
+                _resp.ResponseObect = _regresp;
+                return _resp;
             }
 
         }

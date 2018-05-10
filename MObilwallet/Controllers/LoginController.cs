@@ -31,12 +31,12 @@ namespace MobilWallet.Controllers
     {
 
         [HttpPost]
-        public UserBalance Post([FromBody]User user)
+        public Response Post([FromBody]User user)
         {
             try
             {
                 string email = user.Email.ToString();
-                Safe safe = TransactionalMethods.DecryptWalletByAskingForPassword("/home/Blockchain/Wallet/wallet" + user.Email.ToString() + ".json", user.Password.ToString());
+                Safe safe = TransactionalMethods.DecryptWalletByAskingForPassword("c:/Blockchain/Wallet/wallet" + user.Email.ToString() + ".json", user.Password.ToString());
                 string bitcoinAddress = safe.ExtKey.PrivateKey.PubKey.GetAddress(Network.TestNet).ToString();
 
                 List<string> balances = TransactionalMethods.ShowBalance(safe);
@@ -53,26 +53,38 @@ namespace MobilWallet.Controllers
                         TransactionId = history.Item4
                     }); 
                 }
+
+                Response _resp = new Response();
+                LoginResponse _logresp = new LoginResponse();
+                _logresp.Created = DateTime.Now;
+                _logresp.Email = email;
+                _logresp.ConfirmedBalance = balances[0];
+                _logresp.UnConfirmedBalance = balances[1];
+                _logresp.history = historyData;
+                _logresp.Explanation = "login successfully generated";
+                _resp.success = true;
+                _resp.ResponseObect = _logresp;
                 
-                return new UserBalance
-                {
-                    ConfirmedBalance = balances[0],
-                    UnConfirmedBalance = balances[1],
-                    history = historyData,
-                    Success = true
-                };
+
+                return _resp;
 
             }
             catch (Exception ex)
             {
-             return new UserBalance
-                {
-                    ConfirmedBalance = "",
-                    UnConfirmedBalance = "",
-                    history = null,
-                    Success = false
-                };
-}
+                Response _resp = new Response();
+                LoginResponse _logresp = new LoginResponse();
+                _logresp.Created = DateTime.Now;
+                _logresp.Email = "";
+                _logresp.ConfirmedBalance = "";
+                _logresp.UnConfirmedBalance = "";
+                _logresp.Explanation = ex.Message;
+                _logresp.history = null;
+                _resp.success = false;
+                _resp.ResponseObect = _logresp;
+
+                return _resp;
+
+            }
 
         }       
     }

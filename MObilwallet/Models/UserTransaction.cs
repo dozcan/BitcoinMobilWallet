@@ -5,11 +5,16 @@ using System.Threading.Tasks;
 
 namespace MobilWallet.Models
 {
+    public class BitcoinRegister
+    {
+        public string BitcoinAddress { get; set; }
+        public string MnemonicAddress { get; set;}
+    }
+       
     public class UserBalance
     {
         public string ConfirmedBalance { get; set; }
         public string UnConfirmedBalance { get; set; }
-        public Boolean Success { get; set; }
         public IEnumerable<TransactionHistory> history { get; set; }
     }
 
