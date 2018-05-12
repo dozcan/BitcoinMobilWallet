@@ -34,8 +34,13 @@ namespace MobilWallet.Controllers
         {
             try
             {
+                //using (StreamWriter w = System.IO.File.AppendText("logar.txt"))
+                //{
+                //    w.Write("doga");
+                //}
+
                 //bu dosyalar, mysql docker ile paketlenip iki ayrı sunucuda replice edilmeli
-                string walletpath = Path.Combine("c:/Blockchain/Wallet", "wallet" + user.Email.ToString() + ".json");
+                string walletpath = Path.Combine("Wallet/", "wallet" + user.Email.ToString() + ".json");
 
                 Mnemonic mnemonic;
                 Safe safe = Safe.Create(out mnemonic, user.Password, walletpath, Network.TestNet);
@@ -58,6 +63,7 @@ namespace MobilWallet.Controllers
             }
             catch (Exception ex)
             {
+               
                 Response _resp = new Response();
                 RegisterResponse _regresp = new RegisterResponse();
                 _resp.success = false;
