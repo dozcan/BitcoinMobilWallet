@@ -1,0 +1,92 @@
+using System;
+using Microsoft.AspNetCore.Mvc;
+using NBitcoin;
+using System.IO;
+using HBitcoin.KeyManagement;
+using System.Text;
+using BitcoinMobileWallet.Models;
+using System.Collections;
+using Microsoft.Extensions.Options;
+
+namespace BitcoinMobileWallet.Controllers
+{
+    [Route("api/[controller]")]
+    public class RecoverController : Controller
+    {
+        private Mnemonic mnemonic;
+        private readonly WalletDetails _walletDetails;
+        private readonly IUser user;
+        public RecoverController(IOptions<WalletDetails> appSettings)
+        {
+            _walletDetails = appSettings.Value;
+        }
+    
+        public Response CreateResponse(string bitcoinAddress)
+        {
+            Response _resp = new Response();
+            try
+            {
+                RegisterResponse _regresp = new RegisterResponse();
+                _resp.success = true;
+                _regresp.Created = DateTime.Now;
+                _regresp.BitcoinAddress = bitcoinAddress;
+                _regresp.Explanation = "Recovery generated succesfully";
+                _resp.ResponseObect = _regresp;
+                return _resp;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+
+        }
+        public Response RecoverWallet(RecoverUser user)
+        {
+            try
+            {
+                Network _network;
+                if (_walletDetails._network == "TEST")
+                    _network = Network.TestNet;
+                else _network = Network.Main;
+                Safe safe = Safe.Recover(new Mnemonic(user.Mnemonic), user.Password, _walletDetails._walletPath, _network);
+                string publicKey = safe.ExtKey.PrivateKey.PubKey.ToString();
+                string bitcoinAddress = safe.ExtKey.PrivateKey.PubKey.GetAddress(Network.TestNet).ToString();
+                string mnemonicAddress = mnemonic.ToString();
+                Response _resp = CreateResponse(bitcoinAddress);
+
+                return _resp;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+        // POST api/values
+        [HttpPost]
+        public Response Post([FromBody]User user)
+        {
+            try
+            {
+                Response _resp = RecoverWallet(user);
+                return _resp;
+            }
+            catch (Exception ex)
+            {
+
+                Response _resp = new Response();
+                RegisterResponse _regresp = new RegisterResponse();
+                _resp.success = false;
+                _regresp.Created = DateTime.Now;
+                _regresp.Email = user.Email;
+                _regresp.Explanation = ex.Message;
+                _regresp.BitcoinAddress = "";
+                _regresp.MnemonicAddress = "";
+                _resp.ResponseObect = _regresp;
+                return _resp;
+            }
+
+        }
+
+
+    }
+}
