@@ -23,4 +23,10 @@ namespace BitcoinMobileWallet.Models
         public string Email { get; set; }
         public string Password { get; set; }
     }
+   
+    public class RecoverUser
+    {
+        public string Mnemonic { get; set; }
+        public string Password { get; set; }
+    }
 }
