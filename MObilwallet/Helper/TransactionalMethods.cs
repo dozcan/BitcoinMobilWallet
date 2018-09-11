@@ -1,34 +1,23 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using MobilWallet.Models;
 using NBitcoin;
 using Newtonsoft.Json.Linq;
 using QBitNinja.Client;
 using QBitNinja.Client.Models;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using static System.Console;
 using HBitcoin.KeyManagement;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
-using System.IO;
-using static MobilWallet.QBitNinjaJutsus.QBitNinjaJutsus;
-using static System.Console;
-using MobilWallet.QBitNinjaJutsus;
-
-using static System.Console;
+using static BitcoinMobileWallet.QBitNinjaJutsus.QBitNinjaJutsus;
+using BitcoinMobileWallet.QBitNinjaJutsus;
 using System.Text;
 
-namespace MobilWallet.Helper
+namespace BitcoinMobileWallet.Helper
 {
     public class TransactionalMethods
     {
