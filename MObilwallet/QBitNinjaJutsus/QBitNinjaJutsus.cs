@@ -1,4 +1,4 @@
-﻿using NBitcoin;
+using NBitcoin;
 using QBitNinja.Client;
 using QBitNinja.Client.Models;
 using System.Collections.Generic;
@@ -6,7 +6,7 @@ using System.Linq;
 using HBitcoin.KeyManagement;
 using static System.Console;
 
-namespace MobilWallet.QBitNinjaJutsus
+namespace BitcoinMobileWallet.QBitNinjaJutsus
 {
     public static class QBitNinjaJutsus
     {
