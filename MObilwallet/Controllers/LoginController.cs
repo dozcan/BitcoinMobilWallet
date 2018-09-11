@@ -1,10 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using MobilWallet.Models;
 using NBitcoin;
 using Newtonsoft.Json.Linq;
 using QBitNinja.Client;
@@ -13,22 +12,27 @@ using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
-using static System.Console;
 using HBitcoin.KeyManagement;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
-using MobilWallet.Helper;
-using System.IO;
-using static MobilWallet.QBitNinjaJutsus.QBitNinjaJutsus;
-using MobilWallet.QBitNinjaJutsus;
+using BitcoinMobileWallet.Helper;
+using static BitcoinMobileWallet.QBitNinjaJutsus.QBitNinjaJutsus;
+using BitcoinMobileWallet.QBitNinjaJutsus;
 using static System.Console;
-using System.Text;
+using BitcoinMobileWallet.Models;
+using Microsoft.Extensions.Options;
 
-namespace MobilWallet.Controllers
+
+namespace BitcoinMobileWallet.Controllers
 {
     [Route("api/[controller]")]
     public class LoginController : Controller
     {
+        private readonly WalletDetails _walletDetails;
+        public LoginController(IOptions<WalletDetails> appSettings)
+        {
+            _walletDetails = appSettings.Value;
+        }
 
         [HttpPost]
         public Response Post([FromBody]User user)
@@ -36,7 +40,7 @@ namespace MobilWallet.Controllers
             try
             {
                 string email = user.Email.ToString();
-                string walletpath = Path.Combine("Wallet/", "wallet" + user.Email.ToString() + ".json");
+                string walletpath = Path.Combine(_walletDetails._walletPath, "wallet" + user.Email.ToString() + ".json");
 
                 Safe safe = TransactionalMethods.DecryptWalletByAskingForPassword(walletpath, user.Password.ToString());
                 string bitcoinAddress = safe.ExtKey.PrivateKey.PubKey.GetAddress(Network.TestNet).ToString();
@@ -88,6 +92,6 @@ namespace MobilWallet.Controllers
 
             }
 
-        }       
+        }
     }
 }
