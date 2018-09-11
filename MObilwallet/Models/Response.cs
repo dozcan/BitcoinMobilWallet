@@ -1,23 +1,20 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HBitcoin.KeyManagement;
 
-namespace MobilWallet.Models
+namespace BitcoinMobileWallet.Models
 {
-   public class Response
+
+    public class Response
     {
         public bool success { get; set; }
         public IResponse ResponseObect { get; set; }
 
     }
-    public interface IUser
-    {
-        string Email { get; set; }
 
-    }
-
-    public interface IResponse : IUser
+    public interface IResponse  
     {
         DateTime Created { get; set; }
         string Explanation { get; set; }
