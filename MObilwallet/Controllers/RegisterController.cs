@@ -1,64 +1,94 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
+using System;
 using Microsoft.AspNetCore.Mvc;
-using MobilWallet.Models;
 using NBitcoin;
-using Newtonsoft.Json.Linq;
-using QBitNinja.Client;
-using QBitNinja.Client.Models;
-using System.Globalization;
 using System.IO;
-using System.Net.Http;
-using System.Threading;
-using static System.Console;
 using HBitcoin.KeyManagement;
-using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
-using System.IO;
-using static MobilWallet.QBitNinjaJutsus.QBitNinjaJutsus;
-using MobilWallet.QBitNinjaJutsus;
-using static System.Console;
 using System.Text;
+using BitcoinMobileWallet.Models;
+using System.Collections;
+using Microsoft.Extensions.Options;
 
-namespace MobilWallet.Controllers
+namespace BitcoinMobileWallet.Controllers
 {
     [Route("api/[controller]")]
     public class RegisterController : Controller
     {
+        private Mnemonic mnemonic;
+        private readonly WalletDetails _walletDetails;
+        private readonly IUser user;
+        public RegisterController(IOptions<WalletDetails> appSettings)
+        {
+            _walletDetails = appSettings.Value;
+        }
+        public Safe CreateWallet(User user)
+        {
+            try
+            {
+                string _walletpath = Path.Combine(_walletDetails._walletPath, "wallet" + user.Email + ".json");
+                Network _network;
+                if (_walletDetails._network == "TEST")
+                    _network = Network.TestNet;
+                else _network = Network.Main;
+                Safe safe = Safe.Create(out mnemonic, user.Password, _walletpath, _network); 
+                return safe;
+            }
+            catch(Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+        public Response CreateResponse(string email,string bitcoinAddress,string mnemonicAddress)
+        {
+            Response _resp = new Response();
+            try
+            {
+                RegisterResponse _regresp = new RegisterResponse();
+                _resp.success = true;
+                _regresp.Created = DateTime.Now;
+                _regresp.Email = email;
+                _regresp.BitcoinAddress = bitcoinAddress;
+                _regresp.Explanation = "Registration generated succesfully";
+                _regresp.MnemonicAddress = mnemonicAddress;
+                _resp.ResponseObect = _regresp;
+                return _resp;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+         
+        }
+        public Response RegisterWallet(User user)
+        {
+            try
+            {
+                Safe safe = CreateWallet(user);
+                string publicKey = safe.ExtKey.PrivateKey.PubKey.ToString();
+                string bitcoinAddress = safe.ExtKey.PrivateKey.PubKey.GetAddress(Network.TestNet).ToString();
+                string mnemonicAddress = mnemonic.ToString();
+                //recover wallet from mnemonic;
+                ExtKey privateKey = new ExtKey(Encoding.ASCII.GetBytes(mnemonicAddress));
+                Response _resp = CreateResponse(user.Email, bitcoinAddress, mnemonicAddress);
+
+                return _resp;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }       
         // POST api/values
         [HttpPost]
         public Response Post([FromBody]User user)
         {
             try
             {
-                //using (StreamWriter w = System.IO.File.AppendText("logar.txt"))
-                //{
-                //    w.Write("doga");
-                //}
-
-                //bu dosyalar, mysql docker ile paketlenip iki ayrı sunucuda replice edilmeli
-                string walletpath = Path.Combine("Wallet/", "wallet" + user.Email.ToString() + ".json");
-
-                Mnemonic mnemonic;
-                Safe safe = Safe.Create(out mnemonic, user.Password, walletpath, Network.TestNet);
-                string publicKey = safe.ExtKey.PrivateKey.PubKey.ToString();
-                string bitcoinAddress = safe.ExtKey.PrivateKey.PubKey.GetAddress(Network.TestNet).ToString();
-                string mnemonicAddress = mnemonic.ToString();
-
-                ExtKey privateKey = new ExtKey(Encoding.ASCII.GetBytes(mnemonicAddress));
-
-                Response _resp = new Response();
-                RegisterResponse _regresp = new RegisterResponse();
-                _resp.success = true;
-                _regresp.Created = DateTime.Now;
-                _regresp.Email = user.Email;
-                _regresp.BitcoinAddress = bitcoinAddress;
-                _regresp.Explanation = "Registration generated succesfully";
-                _regresp.MnemonicAddress = mnemonicAddress;
-                _resp.ResponseObect = _regresp;
+                //create keys for just test
+                Key privateKey = new Key();
+                PubKey publicKey = privateKey.PubKey;
+                Console.WriteLine(privateKey);
+                Console.WriteLine(publicKey);
+                Response _resp = RegisterWallet(user);
                 return _resp;
             }
             catch (Exception ex)
