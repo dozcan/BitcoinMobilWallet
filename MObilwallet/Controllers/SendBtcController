@@ -1,0 +1,227 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.AspNetCore.Mvc;
+using NBitcoin;
+using Newtonsoft.Json.Linq;
+using QBitNinja.Client;
+using QBitNinja.Client.Models;
+using System.Net.Http;
+using System.Threading;
+using HBitcoin.KeyManagement;
+using BitcoinMobileWallet.Helper;
+using static BitcoinMobileWallet.QBitNinjaJutsus.QBitNinjaJutsus;
+using static System.Console;
+using BitcoinMobileWallet.Models;
+using Microsoft.Extensions.Options;
+
+
+
+namespace BitcoinMobileWallet.Controllers
+{
+    [Route("api/[controller]")]
+    public class SendBtcController : Controller
+    {
+        private readonly WalletDetails _walletDetails;
+        public SendBtcController(IOptions<WalletDetails> appSettings)
+        {
+            _walletDetails = appSettings.Value;
+        }
+       
+        public async void SendBtc(BtcTransactionDetail BtcTransactionDetail)
+        {
+            try
+            {
+                string SendBtcAddress = BtcTransactionDetail.BtcSenderAddress;
+                string SendBtcAmount = BtcTransactionDetail.SendBtcAmount;
+                string ReceiverAddress = BtcTransactionDetail.BtcReceiverAddres;
+                string userEmail = BtcTransactionDetail._user.Email;
+                string userPassword = BtcTransactionDetail._user.Password;
+
+                Safe safe = TransactionalMethods.DecryptWalletByAskingForPassword(_walletDetails._walletPath + "wallet"+userEmail + ".json", userPassword);
+
+                List<BitcoinAddress> balanceAddress = new List<BitcoinAddress>();
+                BitcoinAddress realbtcaddres = BitcoinAddress.Create(SendBtcAddress, Network.TestNet);
+                balanceAddress.Add(realbtcaddres);
+
+                var unspentCoins = new Dictionary<Coin, bool>();
+                var clientQBitNinjaClient = new QBitNinjaClient(Network.TestNet);
+                var balanceModel = clientQBitNinjaClient.GetBalance(realbtcaddres, unspentOnly: true).Result;
+                foreach (var operation in balanceModel.Operations)
+                {
+                    foreach (var elem in operation.ReceivedCoins.Select(coin => coin as Coin))
+                    {
+                        unspentCoins.Add(elem, operation.Confirmations > 0);
+                    }
+                }
+
+                // 2. Get the script pubkey of the change.
+                Script changeScriptPubKey = null;
+                changeScriptPubKey = realbtcaddres.ScriptPubKey;
+
+                Money fee;
+                try
+                {
+                    var txSizeInBytes = 250;
+                    using (var client = new HttpClient())
+                    {
+                        string request = _walletDetails._feeRequest;
+                        var result = client.GetAsync(request, HttpCompletionOption.ResponseContentRead).Result;
+                        var json = JObject.Parse(result.Content.ReadAsStringAsync().Result);
+                        var fastestSatoshiPerByteFee = json.Value<decimal>("fastestFee");
+                        fee = new Money(fastestSatoshiPerByteFee * txSizeInBytes, MoneyUnit.Satoshi);
+                    }
+                }
+                catch
+                {
+                    throw new Exception("Can't get tx fee");
+                }
+
+                Money availableAmount = Money.Zero;
+                Money unconfirmedAvailableAmount = Money.Zero;
+                foreach (var elem in unspentCoins)
+                {
+                    // If can spend unconfirmed add all
+                    if (elem.Value)
+                    {
+                        availableAmount += elem.Key.Amount;
+                    }
+                }
+
+                Decimal SendBtcAmountDecimal = Decimal.Parse(SendBtcAmount);
+                Money SendAmount = new Money(SendBtcAmountDecimal, MoneyUnit.BTC);
+
+                decimal feePc = Math.Round((100 * fee.ToDecimal(MoneyUnit.BTC)) / SendAmount.ToDecimal(MoneyUnit.BTC));
+
+                if (feePc > 1)
+                {
+                    WriteLine("s");
+                    //return -1 çünkü fee balancedan fazla
+                }
+
+                // 7. Do some checks
+                if (SendAmount < Money.Zero || availableAmount < SendAmount + fee)
+                {
+                    WriteLine("s");
+                    //return -1 çünkü para yok
+                }
+
+                var confirmedAvailableAmount = availableAmount - unconfirmedAvailableAmount;
+                var totalOutAmount = SendAmount + fee;
+                if (confirmedAvailableAmount < totalOutAmount)
+                {
+                    var unconfirmedToSend = totalOutAmount - confirmedAvailableAmount;
+                }
+
+                // 8. Select coins
+                WriteLine("Selecting coins...");
+                var coinsToSpend = new HashSet<Coin>();
+                var unspentConfirmedCoins = new List<Coin>();
+                var unspentUnconfirmedCoins = new List<Coin>();
+                foreach (var elem in unspentCoins)
+                    if (elem.Value) unspentConfirmedCoins.Add(elem.Key);
+                    else unspentUnconfirmedCoins.Add(elem.Key);
+
+                bool haveEnough = SelectCoins(ref coinsToSpend, totalOutAmount, unspentConfirmedCoins);
+                if (!haveEnough)
+                    haveEnough = SelectCoins(ref coinsToSpend, totalOutAmount, unspentUnconfirmedCoins);
+                if (!haveEnough)
+                    throw new Exception("Not enough funds.");
+
+                // 9. Get signing keys
+
+                //Build the transaction
+                BitcoinAddress addressToSend = BitcoinAddress.Create(SendBtcAddress, Network.TestNet);
+                var signingKeys = new HashSet<ISecret>();
+                Dictionary<BitcoinAddress, List<BalanceOperation>> operationsPerAddresses = QueryOperationsPerAddresses(balanceAddress);
+                var operationsPerNotEmptyPrivateKeys = new Dictionary<BitcoinExtKey, List<BalanceOperation>>();
+
+                foreach (var elem in operationsPerAddresses)
+                {
+                    var balance = Money.Zero;
+                    foreach (var op in elem.Value) balance += op.Amount;
+                    if (balance > Money.Zero)
+                    {
+                        try
+                        {
+                            var secret = safe.FindPrivateKey(elem.Key);
+                            operationsPerNotEmptyPrivateKeys.Add(secret, elem.Value);
+                        }
+                        catch (Exception ex)
+                        {
+
+                        }
+                    }
+                }
+
+
+                try
+                {
+                    foreach (var coin in coinsToSpend)
+                    {
+                        //   if(coin.ScriptPubKey == )
+                        signingKeys.Add(safe.BitcoinExtKey);
+                    }
+                }
+                catch (Exception ex)
+                {
+
+                }
+
+
+                var builder = new TransactionBuilder();
+                var tx = builder
+                    .AddCoins(coinsToSpend)
+                    .AddKeys(signingKeys.ToArray())
+                    .Send(addressToSend, SendAmount)
+                    .SetChange(changeScriptPubKey)
+                    .SendFees(fee)
+                    .BuildTransaction(true);
+
+                if (!builder.Verify(tx))
+                {
+                    // Exit("Couldn't build the transaction.");
+                    //return -1 gönderim başarısız
+                    //WriteLine($"Transaction Id: {tx.GetHash()}")
+                }
+
+                // QBit's success response is buggy so let's check manually, too		
+                BroadcastResponse broadcastResponse;
+                var success = false;
+                var tried = 0;
+                var maxTry = 7;
+                do
+                {
+                    tried++;
+                    broadcastResponse = clientQBitNinjaClient.Broadcast(tx).Result;
+                    var getTxResp = clientQBitNinjaClient.GetTransaction(tx.GetHash()).Result;
+                    if (getTxResp == null)
+                    {
+                        Thread.Sleep(3000);
+                        continue;
+                    }
+                    else
+                    {
+                        success = true;
+                        break;
+                    }
+                } while (tried <= maxTry);
+
+
+
+                if (!success)
+                {
+                    if (broadcastResponse.Error != null)
+                    {
+                        //return -1 deneme başarısız
+                        //log
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+
+            }
+        }
+    }
+}
