@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,12 +8,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using BitcoinMobileWallet.Models;
 
-namespace MobilWallet
+namespace BitcoinMobileWallet
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IHostingEnvironment env)
         {
             Configuration = configuration;
         }
@@ -24,6 +25,11 @@ namespace MobilWallet
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
+            services.AddMemoryCache();
+            services.AddSession();
+            var appSettings = Configuration.GetSection("WalletDetails");
+            services.Configure<WalletDetails>(appSettings);
+         
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -31,8 +37,12 @@ namespace MobilWallet
         {
             if (env.IsDevelopment())
             {
+
+                app.UseBrowserLink();
                 app.UseDeveloperExceptionPage();
             }
+
+           string envs= env.EnvironmentName;
 
             app.UseMvc();
         }
